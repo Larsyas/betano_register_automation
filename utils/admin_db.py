@@ -28,6 +28,8 @@ cursor.execute(f'CREATE TABLE IF NOT EXISTS {TABLE_NAME} '
                ')'
                )
 
+# cursor.execute(f'DELETE FROM your_table WHERE index IS NULL;')
+
 cursor.close()
 # connection.commit()
 
@@ -36,8 +38,8 @@ cursor.close()
 # dataframe.to_sql(TABLE_NAME, connection, if_exists='replace', index=True)
 
 
-dataframe = dataframe.drop(dataframe[dataframe.index < 576].index)
-dataframe = dataframe.reset_index(drop=True)
+# dataframe = dataframe.drop(dataframe[dataframe.index < 576].index)
+# dataframe = dataframe.reset_index(drop=True)
 dataframe.to_sql(TABLE_NAME, connection, if_exists='replace', index=True)
 connection.commit()
 connection.close()

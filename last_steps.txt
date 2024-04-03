@@ -1,0 +1,6 @@
+Ainda precisamos:
+	aprender a buscar o código no gmail;
+	apagar os cache do navegador;
+	adicionar verificações de etapas;
+	consertar o gecko;
+	construir uma db segura com ruas válidas;
