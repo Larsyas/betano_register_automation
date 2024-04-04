@@ -14,6 +14,7 @@ class Conta:
         self.cpf: str = row[3]
         self.name: str = row[4]
         self.date_of_birth: str = row[5]
+        self.betano_password: str = row[6]
         self.game_link: str = row[7]
         self.coupon: str = row[8]
         self.date_of_creation: str = row[10]
@@ -25,6 +26,7 @@ class Conta:
             'cpf': self.cpf,
             'name': self.name,
             'date_of_birth': self.date_of_birth,
+            'betano_password': self.betano_password,
             'game_link:': self.game_link,
             'coupon': self.coupon,
             'date_of_creation': self.date_of_creation,
@@ -48,11 +50,11 @@ class AccountIterator():
         self.cursor.execute(f'SELECT * FROM {TABLE_NAME} ')
         self.rows: list = self.cursor.fetchall()
 
-    def next_account(self):
-        try:
-            return next(self._yield_account())
-        except StopIteration:
-            return None
+    # def next_account(self):
+    #     try:
+    #         return next(self._yield_account())
+    #     except StopIteration:
+    #         return None
 
     def _yield_account(self):
         if self.rows is not None:

@@ -3,7 +3,7 @@ import random
 import string
 from pathlib import Path
 from pynput.keyboard import Controller, Key
-from addresses import avenidas
+from utils.addresses import avenidas
 import pyautogui
 
 UTILS_DIR = Path(__file__).parent
@@ -76,13 +76,14 @@ class FakeData():
             conn.commit()
 
 
-fake_data_income = FakeData()
-fake_data_income.gerar_endereco_e_phone_unicos()
+if __name__ == '__main__':
 
+    fake_data_income = FakeData()
+    fake_data_income.gerar_endereco_e_phone_unicos()
 
-address = f'{fake_data_income.fake_estado} \
-{fake_data_income.fake_rua}\
-{fake_data_income.fake_numero_casa}'
-print(fake_data_income.fake_phone)
+    address = f'{fake_data_income.fake_estado} \
+    {fake_data_income.fake_rua}\
+    {fake_data_income.fake_numero_casa}'
+    print(fake_data_income.fake_phone)
 
-# fake_data_income.save_fake_data_usage()
+    # fake_data_income.save_fake_data_usage()

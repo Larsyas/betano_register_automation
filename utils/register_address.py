@@ -46,7 +46,7 @@ class FakeAddress():
             self.fake_rua, self.fake_estado = random.choice(avenidas)
 
             # Gere um número de casa aleatório que não seja maior do que 75
-            self.fake_numero_casa = random.randint(1, 75)
+            self.fake_numero_casa = random.randint(400, 800)
 
             # Crie um número fictício com o DDD do estado
             self.fake_phone = f"{ddd_por_estado[self.fake_estado]}99{''.join(random.choices(string.digits, k=7))}"

@@ -8,6 +8,12 @@ from selenium import webdriver
 from utils.register_address import FakeAddress
 from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.firefox.service import Service as FirefoxService
+import datetime
+from utils.test import FakeData
+from pathlib import Path
+
+ROOT_DIR = Path(__file__).parent  # (Sou_um_ser_humano_confia)
+VPN_CAPTCHA = f'{ROOT_DIR}\\betano_vpn_captcha_indicator.png'
 
 iterator = AccountIterator()
 iterator.connect_to_db()
@@ -15,7 +21,7 @@ iterator.connect_to_db()
 service = FirefoxService(executable_path=GeckoDriverManager().install())
 
 options = webdriver.FirefoxOptions()
-options.add_argument('--private')
+# options.add_argument('--private')
 options.add_argument("--disable-blink-features=AutomationControlled")
 options.set_preference("dom.webdriver.enabled", False)
 options.set_preference('useAutomationExtension', False)
@@ -43,22 +49,55 @@ options.profile = profile_path
 bind = Controller()
 
 
+def reset_vpn():
+
+    # search for norton on windows search
+    bind.tap(Key.cmd)
+    sleep(2)
+    pyautogui.typewrite("Norton 360", interval=0.1)
+    sleep(2)
+
+    # opens it
+    bind.tap(Key.enter)
+    sleep(5)
+
+    # turns vpn off and on again
+    print('clicando no vpn')
+    pyautogui.click(1347, 629, duration=.2)
+    sleep(40)
+    pyautogui.click(1347, 629, duration=.2)
+    sleep(6)
+
+    bind.press(Key.alt_l)
+    bind.tap(Key.f4)
+    bind.release(Key.alt_l)
+
+
+def save_info_to_db():
+    conta.date_of_creation = datetime.datetime.now()
+
+
 def connect_to_phone():
+    # This function presumes you're in the pc desktop.
 
     def restart_ip():
-        # This function presumes you're in the pc desktop.
 
         # clicks airplane phone mode (turn on)
         pyautogui.click(851, 583, duration=.5)
-        sleep(10)
+        sleep(15)
 
         # clicks airplane phone mode (turn off)
         pyautogui.click(851, 583, duration=.5)
-        sleep(5)
+        sleep(7)
 
         # turns phone wifi router back on
         pyautogui.click(1044, 580, duration=.5)
-        sleep(3)
+        sleep(5)
+
+        # minimizes everything
+        bind.press(Key.cmd)
+        bind.type('d')
+        bind.release(Key.cmd)
 
         # # clicks internet options
         # pyautogui.click(856, 294, duration=.5)
@@ -86,8 +125,14 @@ def _switchTab(i):
 
 
 def access_betano():
+    global driver
+    driver = webdriver.Firefox(service=service, options=options)
+    driver.maximize_window()
+
     driver.get('https://br.betano.com/')
-    sleep(3)
+    sleep(2)
+    bind.tap(Key.esc)
+    sleep(2)
 
 
 def register_betano_account():
@@ -95,7 +140,7 @@ def register_betano_account():
     fake_data_income = FakeAddress()
     fake_data_income.gerar_endereco_e_phone_unicos()
 
-    # Chamando primeira conta do iterator
+    # Chamando próxima conta do iterator
     global conta
     conta = iterator.next_account()
 
@@ -104,17 +149,26 @@ def register_betano_account():
     #     '/html/body/main/div/div/section[2]/div[6]/div/div/div[2]/div[1]/p[1]/a'
     # ).click()
 
+    # Selects navigator
+    pyautogui.click(1505, 808, duration=.2)
     bind.tap(Key.esc)
-    bind.tap(Key.esc)
-    sleep(2)
 
     # clica em registar
     pyautogui.click(1778, 118, duration=.5)
     sleep(5)
+    try:
+        captcha_verification = pyautogui.locateOnScreen(VPN_CAPTCHA, 3)
+
+    except:
+        captcha_verification = False
+
+    if captcha_verification == True:
+        print('Erro, captcha.')
+        exit()
 
     # clica em registrar com email
     pyautogui.click(1230, 652, duration=.1)
-    sleep(10)
+    sleep(6)
 
     bind.type(conta.email)
     bind.tap(Key.tab)
@@ -169,7 +223,7 @@ def register_betano_account():
         x += 1
 
     bind.tap(Key.enter)
-    sleep(8)
+    sleep(6)
 
     # select address field
     pyautogui.click(1202, 449, duration=.1)
@@ -182,6 +236,8 @@ def register_betano_account():
     # escreve endereço
     bind.type(betano_address)
     print(betano_address)
+    print('Email usado: ', conta.email)
+    fake_data_income.save_fake_data_usage()
     sleep(1)
 
     # seleciona autofill do endereço
@@ -252,7 +308,7 @@ def gmail_process():
     pyautogui.click(1048, 1055, duration=.2, button='right')
     sleep(1)
 
-    pyautogui.click(1058, 934, duration=.2)
+    pyautogui.click(971, 897, duration=.2)
     sleep(3)
 
     # selects the navigator
@@ -268,20 +324,20 @@ def gmail_process():
 
     bind.type('gmail.com')
     bind.tap(Key.enter)
-    sleep(10)
+    sleep(7)
 
     # # Gmail login button
     # pyautogui.click(1391, 115, duration=.2)
     # sleep(8)
 
-    # Type login fields
+    # type login fields
     bind.type(conta.email)
     bind.tap(Key.enter)
-    sleep(8)
+    sleep(6)
 
     bind.type(conta.email_password)
     bind.tap(Key.enter)
-    sleep(8)
+    sleep(6)
 
     # google not now button 1
     pyautogui.click(1268, 733, duration=.1, clicks=2, interval=.5)
@@ -289,7 +345,7 @@ def gmail_process():
 
     # google not now button 2
     pyautogui.click(812, 839, duration=.1, clicks=2, interval=.5)
-    sleep(10)
+    sleep(8)
 
     # email search field
     pyautogui.click(411, 114, duration=.2)
@@ -297,18 +353,18 @@ def gmail_process():
 
     bind.type('Bem-vindo à Betano!')
     bind.tap(Key.enter)
-    sleep(7)
+    sleep(4)
 
     # selects account's first email
     pyautogui.click(997, 278, duration=.2)
-    sleep(6)
+    sleep(4)
 
     # deny situational translation
-    for _ in range(2):
-        pyautogui.click(661, 340, duration=.2)
-        sleep(3)
-        _ += 1
-    sleep(1)
+    # for _ in range(2):
+    #     pyautogui.click(661, 340, duration=.2)
+    #     sleep(3)
+    #     _ += 1
+    # sleep(1)
 
     # selects verification code
     pyautogui.click(1158, 681, duration=.2, clicks=2)
@@ -318,8 +374,8 @@ def gmail_process():
     bind.release(Key.ctrl_l)
     sleep(1)
 
-    # minimizes gmail window
-    pyautogui.click(1806, 20, duration=.2)
+    # closes gmail window
+    pyautogui.click(1894, 14, duration=.2)
     sleep(3)
 
     # betano verification code input field
@@ -327,11 +383,11 @@ def gmail_process():
     bind.press(Key.ctrl_l)
     bind.type('v')
     bind.release(Key.ctrl_l)
-    sleep(2)
+    sleep(3)
 
     for _ in range(4):
         bind.tap(Key.tab)
-        sleep(.1)
+        sleep(.2)
         _ += 1
 
     bind.tap(Key.enter)
@@ -343,14 +399,13 @@ def gmail_process():
     bind.press(Key.cmd)
     bind.type('d')
     bind.release(Key.cmd)
+
+    driver.close()
     sleep(2)
 ########################################
 
 
-driver = webdriver.Firefox(service=service, options=options)
-
 # print(iterator.rows)
-driver.maximize_window()
 first_account_iteration = True
 
 # DB Accounts loop:
@@ -358,18 +413,20 @@ for process in iterator.rows:
     if first_account_iteration == True:
         access_betano()
         register_betano_account()
-        gmail_process()
-        connect_to_phone()
-
+        gmail_process()  # (Closes driver after process)
+        save_info_to_db()
+        # connect_to_phone()
+        reset_vpn()
         first_account_iteration = False
 
     else:
         access_betano()
         register_betano_account()
-        gmail_process()
-        connect_to_phone()
+        gmail_process()  # (Closes driver after process)
+        # connect_to_phone()
+        save_info_to_db()
+        reset_vpn()
 
 
-# driver.close()
 iterator.cursor.close()
 iterator.connection.close()
