@@ -1,4 +1,3 @@
-from numpy import True_
 import pyautogui
 from months import months
 from utils.data_usage_test import AccountIterator, Conta
@@ -6,7 +5,6 @@ from pynput.keyboard import Controller, Key
 from utils.commands import profile_path, DEFAULT_PASSWORD
 from time import sleep
 from selenium import webdriver
-from selenium.common.exceptions import WebDriverException
 from utils.register_address import FakeAddress
 from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.firefox.service import Service as FirefoxService
@@ -14,10 +12,8 @@ import datetime
 from utils.test import FakeData
 from pathlib import Path
 
-
 ROOT_DIR = Path(__file__).parent  # (Sou_um_ser_humano_confia)
-CAPTCHA_IMG1 = f'{ROOT_DIR}\\images\\betano_vpn_captcha_indicator.png'
-CAPTCHA_IMG2 = f'{ROOT_DIR}\\images\\betano_vpn_captcha_indicator2.png'
+CAPTCHA_IMG = f'{ROOT_DIR}\\images\\betano_vpn_captcha_indicator.png'
 
 iterator = AccountIterator()
 iterator.connect_to_db()
@@ -53,9 +49,9 @@ options.profile = profile_path
 bind = Controller()
 
 
-def procura_captcha1(firefoxDriver: webdriver.Firefox, firefoxOptions: webdriver.FirefoxOptions):
+def procura_captcha(firefoxDriver: webdriver.Firefox, firefoxOptions: webdriver.FirefoxOptions):
 
-    def _procedimento_captcha1(firefoxDriver: webdriver.Firefox, firefoxOptions: webdriver.FirefoxOptions):
+    def _procedimento_captcha(firefoxDriver: webdriver.Firefox, firefoxOptions: webdriver.FirefoxOptions):
         # This function closes the driver, resets ip and change tab functioning
         firefoxDriver.quit()
 
@@ -76,59 +72,20 @@ def procura_captcha1(firefoxDriver: webdriver.Firefox, firefoxOptions: webdriver
         return firefoxOptions
 
     try:
-        global captcha1
-        captcha1 = pyautogui.locateOnScreen(CAPTCHA_IMG1, 7)
+        captcha = pyautogui.locateOnScreen(CAPTCHA_IMG, 10)
 
-        if captcha1:
+        if captcha:
             print('Got into a captcha, now starting captcha correction process.')
             sleep(1)
-            _procedimento_captcha1(firefoxDriver=driver,
-                                   firefoxOptions=options)
-            captcha1 = True
+            _procedimento_captcha(firefoxDriver=driver, firefoxOptions=options)
 
     except pyautogui.ImageNotFoundException:
         print('Did not got into the first registration captcha, continuing now.')
-        captcha1 = None
 
-
-def procura_captcha2(firefoxDriver: webdriver.Firefox, firefoxOptions: webdriver.FirefoxOptions):
-    def _procedimento_captcha2(firefoxDriver: webdriver.Firefox, firefoxOptions: webdriver.FirefoxOptions):
-        # This function closes the driver, resets ip and change tab functioning,
-        # (LEAVING ME AT THE DESKTOP)
-        firefoxDriver.quit()
-
-        # ALTERA ENTRE ABAS PRIVATE E NORMAL
-        if '--private' in firefoxOptions.arguments:
-            print("O driver estava usando abas anônimas. Mudando para abas normais.")
-            firefoxOptions.arguments.remove('--private')
-            sleep(1)
-
-        else:
-            print("O driver não estava usando abas anônimas. Mudando para abas anônimas.")
-            # Adicione a opção '--private' para usar abas anônimas
-            firefoxOptions.arguments.append('--private')
-            sleep(1)
-
-        reset_vpn()
-
-        return firefoxOptions
-
-    try:
-        global captcha2
-        captcha2 = pyautogui.locateOnScreen(CAPTCHA_IMG2, 7)
-
-        if captcha2:
-            print('Did not got to the second captcha, continuing, gg.')
-            captcha2 = None
-
-    except pyautogui.ImageNotFoundException:
-        print('Did got into the second registration captcha, starting captcha correction process 2 now.')
-        _procedimento_captcha2(firefoxDriver=driver, firefoxOptions=options)
-        captcha2 = True
+    captcha
 
 
 def reset_vpn():
-    # This function leaves me at desktop
 
     # search for norton on windows search
     bind.tap(Key.cmd)
@@ -141,7 +98,7 @@ def reset_vpn():
     sleep(5)
 
     # turns vpn off and on again
-    print('resetando o vpn')
+    print('clicando no vpn')
     pyautogui.click(1347, 629, duration=.2)
     sleep(30)
     pyautogui.click(1347, 629, duration=.2)
@@ -203,7 +160,7 @@ def _switchTab(i):
     driver.switch_to.window(driver.window_handles[i])
 
 
-def access_betano_and_verifies_first_captcha():
+def access_betano():
     global driver
     driver = webdriver.Firefox(service=service, options=options)
     driver.maximize_window()
@@ -212,6 +169,21 @@ def access_betano_and_verifies_first_captcha():
     sleep(2)
     bind.tap(Key.esc)
     sleep(2)
+
+
+def register_betano_account():
+    # Instanciando e gerando fake data class
+    fake_data_income = FakeAddress()
+    fake_data_income.gerar_endereco_e_phone_unicos()
+
+    # Chamando próxima conta do iterator
+    global conta
+    conta = iterator.next_account()
+
+    # driver.find_element(
+    #     By.XPATH,
+    #     '/html/body/main/div/div/section[2]/div[6]/div/div/div[2]/div[1]/p[1]/a'
+    # ).click()
 
     # Selects navigator
     pyautogui.click(1505, 808, duration=.2)
@@ -223,18 +195,7 @@ def access_betano_and_verifies_first_captcha():
 
     ###########################################################################
     # HERE IS WHERE THE REGISTRATION CAPTCHA POPS UP (NEED TO VERIFY) #########
-    procura_captcha1(firefoxDriver=driver, firefoxOptions=options)
-
-
-def account_registration_process():
-
-    # Instanciando e gerando fake data class
-    fake_data_income = FakeAddress()
-    fake_data_income.gerar_endereco_e_phone_unicos()
-
-    # Chamando próxima conta do iterator
-    global conta
-    conta = iterator.next_account()
+    procura_captcha()
 
     # clica em registrar com email
     pyautogui.click(1230, 652, duration=.1)
@@ -351,17 +312,14 @@ def account_registration_process():
     bind.tap(Key.enter)
     sleep(8)
 
-    # Betano's terms of use checkbox (Next step is calling gmail_process.)
     pyautogui.click(1080, 400, duration=.2)
-    sleep(1)
 
     for _ in range(7):
         bind.tap(Key.tab)
-        sleep(.3)
+        sleep(.5)
         _ += 1
     bind.tap(Key.enter)
-
-    procura_captcha2()
+    sleep(8)
 
     # for x in range(5):
     #     bind.tap(Key.tab)
@@ -480,31 +438,13 @@ def gmail_process():
 
 # DB Accounts loop:
 for process in iterator.rows:
-    # Tries to access and use betano successfully
-    try:
-        access_betano_and_verifies_first_captcha()
-        account_registration_process()
-
-    # In the case de IP from VPN comes offline, the script tries again with other IP
-    except WebDriverException:
-        reset_vpn()
-        access_betano_and_verifies_first_captcha()
-        account_registration_process()
-
-    # In the case of the first captcha pops up
-    while captcha1 == True:
-        # while captcha is True, access_betano_and_verifies_first_captcha will fix it,
-        # so I don't need to call reset_vpn.
-        access_betano_and_verifies_first_captcha()
-        account_registration_process()
-
-    while captcha2 == True:
-        access_betano_and_verifies_first_captcha()
-        account_registration_process()
-
+    access_betano()
+    register_betano_account()  # Verifies CAPTCHA
     gmail_process()  # (Closes driver after process)
     save_info_to_db()
+    # connect_to_phone()
     reset_vpn()
+    first_account_iteration = False
 
 
 iterator.cursor.close()
