@@ -28,7 +28,7 @@ iterator.connect_to_db()
 service = FirefoxService(executable_path=GeckoDriverManager().install())
 
 options = webdriver.FirefoxOptions()
-# options.add_argument('--private')
+options.add_argument('--private')
 options.add_argument("--disable-blink-features=AutomationControlled")
 options.set_preference("dom.webdriver.enabled", False)
 options.set_preference('useAutomationExtension', False)
@@ -148,6 +148,7 @@ def procura_captcha2(firefoxDriver: webdriver.Firefox, firefoxOptions: webdriver
 
         if captcha2:
             print('Did not got to the second captcha, continuing, gg.')
+            sleep(1)
             captcha2 = None
 
     except pyautogui.ImageNotFoundException:
@@ -356,8 +357,8 @@ def access_betano_and_verifies_first_captcha(login: bool | None):
     while captcha1 is True:
         try:
             access_betano_and_verifies_first_captcha(login=False)
-            account_registration_process()
-        except captcha1 == True:
+            account_registration_process(solving_problem_mode=True)
+        except:
             pass
 
 
@@ -377,7 +378,9 @@ def account_registration_process(solving_problem_mode: bool = None):
 
     # clica em registrar com email
     pyautogui.click(1230, 652, duration=.1)
-    sleep(5)
+    pyautogui.click(1230, 652, duration=.1)
+    pyautogui.click(1230, 652, duration=.1)
+    sleep(2)
 
     bind.type(conta.email)
     bind.tap(Key.tab)
@@ -505,8 +508,8 @@ def account_registration_process(solving_problem_mode: bool = None):
     while captcha2 is True:
         try:
             access_betano_and_verifies_first_captcha(login=False)
-            account_registration_process()
-        except captcha2 == True:
+            account_registration_process(solving_problem_mode=True)
+        except:
             pass
 
     # if captcha2:
@@ -521,52 +524,58 @@ def account_registration_process(solving_problem_mode: bool = None):
 
 def gmail_process():
 
-    # opens new nav
-    pyautogui.click(1048, 1055, duration=.2, button='right')
-    sleep(1)
+    def open_gmail():
+        # opens new nav
+        bind.tap(Key.cmd)
+        sleep(1)
 
-    pyautogui.click(971, 897, duration=.2)
-    sleep(3)
+        pyautogui.typewrite('privativa do firefox', .1)
+        bind.tap(Key.enter)
+        sleep(4)
 
-    # selects the navigator
-    pyautogui.click(933, 201, duration=.2)
+        # selects the navigator
+        pyautogui.click(933, 201, duration=.2)
 
-    # set_vpn(first_iteration=True)
+        # Select search field
+        bind.press(Key.alt_l)
+        bind.type('d')
+        bind.release(Key.alt_l)
+        sleep(1)
 
-    # Select search field
-    bind.press(Key.alt_l)
-    bind.type('d')
-    bind.release(Key.alt_l)
-    sleep(1)
+        bind.type('gmail.com')
+        bind.tap(Key.enter)
+        sleep(7)
 
-    bind.type('gmail.com')
-    bind.tap(Key.enter)
-    sleep(7)
-
-    # # Gmail login button
-    # pyautogui.click(1391, 115, duration=.2)
-    # sleep(8)
-
-    # type login fields
-    bind.type(conta.email)
-    bind.tap(Key.enter)
-    sleep(1)
+        # type login fields
+        bind.type(conta.email)
+        bind.tap(Key.enter)
+        sleep(1)
 
     # Verifies gmail password screen
-    try:
-        gmail_password_step = pyautogui.locateOnScreen(
-            GMAIL_PASSWORD_SCREEN_VERIFICATION,
-            8
-        )
+        try:
+            gmail_password_step = pyautogui.locateOnScreen(
+                GMAIL_PASSWORD_SCREEN_VERIFICATION,
+                8
+            )
 
-        if gmail_password_step:
-            sleep(1)
-            gmail_password_step = None
-            pass
+            if gmail_password_step:
+                sleep(1)
+                gmail_password_step = None
+                pass
 
-    except pyautogui.ImageNotFoundException:
-        print('Could not login to gmail. Stopping execution.')
-        exit()
+        except pyautogui.ImageNotFoundException:
+            print('Could not login to gmail. Stopping execution.')
+            print('STILL NEED TO CONFIRM THE CODE ON BETANO.')
+            print()
+
+            bind.press(Key.alt_l)
+            bind.tap(Key.f4)
+            bind.release(Key.alt_l)
+            sleep(2)
+
+            open_gmail()
+
+    open_gmail()
 
     bind.type(conta.email_password)
     bind.tap(Key.enter)
@@ -591,13 +600,6 @@ def gmail_process():
     # selects account's first email
     pyautogui.click(997, 278, duration=.2)
     sleep(4)
-
-    # deny situational translation
-    # for _ in range(2):
-    #     pyautogui.click(661, 340, duration=.2)
-    #     sleep(3)
-    #     _ += 1
-    # sleep(1)
 
     # selects verification code
     pyautogui.click(1158, 681, duration=.2, clicks=2)
@@ -664,8 +666,9 @@ def gmail_process():
 
 
 account_num = 0
-
-
+print()
+print(f'{len(iterator.rows)} contas da DB a serem registradas.')
+first_iteration = True
 # DB Accounts loop:
 for process in iterator.rows:
     print()
@@ -691,18 +694,26 @@ for process in iterator.rows:
         # so I don't need to call reset_vpn.
         access_betano_and_verifies_first_captcha(login=False)
         # Verifies if email was sent to gmail. (captcha2)
-        account_registration_process(solving_problem_mode=True)
+        if first_iteration == True:
+            account_registration_process()
+        else:
+            account_registration_process(solving_problem_mode=True)
         gmail_process()  # (Closes driver after process)
 
     # In the case of the second captcha pops up
     while captcha2 == True:
         access_betano_and_verifies_first_captcha(login=False)
         # Verifies if email was sent to gmail. (captcha2)
-        account_registration_process(solving_problem_mode=True)
+        # if first_iteration == True, we call next account in case of captcha
+        if first_iteration == True:
+            account_registration_process()
+        else:
+            account_registration_process(solving_problem_mode=True)
         gmail_process()  # (Closes driver after process)
 
     save_info_to_db()
     reset_vpn(restart=True)
+    first_iteration = False
 
 
 iterator.cursor.close()

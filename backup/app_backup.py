@@ -100,7 +100,7 @@ def reset_vpn():
     # turns vpn off and on again
     print('clicando no vpn')
     pyautogui.click(1347, 629, duration=.2)
-    sleep(30)
+    sleep(20)
     pyautogui.click(1347, 629, duration=.2)
     sleep(6)
 
@@ -433,6 +433,8 @@ def gmail_process():
 
     driver.close()
     sleep(2)
+
+
 ########################################
 
 
