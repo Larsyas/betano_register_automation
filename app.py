@@ -28,7 +28,7 @@ iterator.connect_to_db()
 service = FirefoxService(executable_path=GeckoDriverManager().install())
 
 options = webdriver.FirefoxOptions()
-options.add_argument('--private')
+# options.add_argument('--private')
 options.add_argument("--disable-blink-features=AutomationControlled")
 options.set_preference("dom.webdriver.enabled", False)
 options.set_preference('useAutomationExtension', False)
@@ -377,10 +377,9 @@ def account_registration_process(solving_problem_mode: bool = None):
         fake_data_income.gerar_endereco_e_phone_unicos()
 
     # clica em registrar com email
-    pyautogui.click(1230, 652, duration=.1)
-    pyautogui.click(1230, 652, duration=.1)
-    pyautogui.click(1230, 652, duration=.1)
     sleep(2)
+    pyautogui.click(1230, 652, duration=.1)
+    sleep(4)
 
     bind.type(conta.email)
     bind.tap(Key.tab)
@@ -449,6 +448,7 @@ def account_registration_process(solving_problem_mode: bool = None):
     pyautogui.typewrite(betano_address, 0.1)
     print(betano_address)
     print('Email usado: ', conta.email)
+    print('Senha do email: ', conta.email_password)
     fake_data_income.save_fake_data_usage()
     sleep(1)
 
