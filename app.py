@@ -28,7 +28,7 @@ iterator.connect_to_db()
 service = FirefoxService(executable_path=GeckoDriverManager().install())
 
 options = webdriver.FirefoxOptions()
-options.add_argument('--private')
+#options.add_argument('--private')
 options.add_argument("--disable-blink-features=AutomationControlled")
 options.set_preference("dom.webdriver.enabled", False)
 options.set_preference('useAutomationExtension', False)

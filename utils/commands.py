@@ -3,4 +3,4 @@ buttons_addresses = {
 }
 
 DEFAULT_PASSWORD = 'Senha123@'
-profile_path = f'C:\\Users\\cjuni\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\kv937bcr.default-release'
+profile_path = f'C:\\Users\\admin\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\atm8l3mh.default-release'
