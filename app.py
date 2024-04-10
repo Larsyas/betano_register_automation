@@ -20,7 +20,16 @@ CAPTCHA_IMG1 = f'{ROOT_DIR}\\images\\betano_vpn_captcha_indicator.png'
 CAPTCHA_IMG2 = f'{ROOT_DIR}\\images\\betano_vpn_captcha_indicator2.png'
 EMAIL_CODE_VERIFICATION = f'{ROOT_DIR}\\images\\verification_code_error.png'
 ACCOUNT_VERIFICATION_IMG = f'{ROOT_DIR}\\images\\account_successfully_created_verification.png'
+EXISTING_CPF = f'{ROOT_DIR}\\images\\cpf_existente.png'
+EMPTY_USER_NAME_VERIFICATION = f'{ROOT_DIR}\\images\\usuario_em_branco.png'
+SECOND_REGISTRATION_STEP = f'{ROOT_DIR}\\images\\second_registration_step.png'
+
+GMAIL_USERNAME_SCREEN_VERIFICATION = f'{ROOT_DIR}\\images\\gmail_initial_screen.png'
 GMAIL_PASSWORD_SCREEN_VERIFICATION = f'{ROOT_DIR}\\images\\gmail_password_screen.png'
+GMAIL_NOT_NOW_SCREEN_VERIFICATION1 = f'{ROOT_DIR}\\images\\gmail_not_now_screen1.png'
+GMAIL_NOT_NOW_SCREEN_VERIFICATION2 = f'{ROOT_DIR}\\images\\gmail_not_now_screen2.png'
+GMAIL_LOGGED_ON_SCREEN_VERIFICATION = f'{ROOT_DIR}\\images\\gmail_logged_on_screen.png'
+
 
 iterator = AccountIterator()
 iterator.connect_to_db()
@@ -28,7 +37,7 @@ iterator.connect_to_db()
 service = FirefoxService(executable_path=GeckoDriverManager().install())
 
 options = webdriver.FirefoxOptions()
-#options.add_argument('--private')
+# options.add_argument('--private')
 options.add_argument("--disable-blink-features=AutomationControlled")
 options.set_preference("dom.webdriver.enabled", False)
 options.set_preference('useAutomationExtension', False)
@@ -56,12 +65,19 @@ options.profile = profile_path
 bind = Controller()
 
 
+def reinicia_tentativa_de_conta(firefoxDriver: webdriver.Firefox, firefoxOptions: webdriver.FirefoxOptions):
+    firefoxDriver.quit()
+    reset_vpn(restart=True)
+    access_betano_and_verifies_first_captcha()
+    account_registration_process(solving_problem_mode=True)
+
+
 def verifies_email_code_error():
     i = 0
     try:
         verification_code_error = pyautogui.locateOnScreen(
             EMAIL_CODE_VERIFICATION,
-            4
+            4, confidence=0.9
         )
 
     except pyautogui.ImageNotFoundException:
@@ -100,24 +116,24 @@ def procura_captcha1(firefoxDriver: webdriver.Firefox, firefoxOptions: webdriver
 
         reset_vpn(restart=True)
 
-        return firefoxOptions
+        return firefoxDriver, firefoxOptions
 
 # after here, the script goes to the begging of the trying loop
 
     try:
-        global captcha1
-        captcha1 = pyautogui.locateOnScreen(CAPTCHA_IMG1, 5)
+        captcha1 = pyautogui.locateOnScreen(CAPTCHA_IMG1, 4, confidence=0.9)
 
         if captcha1:
             print('Got into a captcha, now starting captcha correction process.')
             sleep(1)
             _procedimento_captcha1(firefoxDriver=driver,
                                    firefoxOptions=options)
-            captcha1 = True
+
+            return True
 
     except pyautogui.ImageNotFoundException:
         print('Did not got into the first registration captcha, continuing now.')
-        captcha1 = None
+        return False
 
 
 def procura_captcha2(firefoxDriver: webdriver.Firefox, firefoxOptions: webdriver.FirefoxOptions):
@@ -140,21 +156,20 @@ def procura_captcha2(firefoxDriver: webdriver.Firefox, firefoxOptions: webdriver
 
         reset_vpn(restart=True)
 
-        return firefoxOptions
+        return firefoxDriver, firefoxOptions
 
     try:
-        global captcha2
-        captcha2 = pyautogui.locateOnScreen(CAPTCHA_IMG2, 7)
+        captcha2 = pyautogui.locateOnScreen(CAPTCHA_IMG2, 7, confidence=0.9)
 
         if captcha2:
             print('Did not got to the second captcha, continuing, gg.')
             sleep(1)
-            captcha2 = None
+            return False
 
     except pyautogui.ImageNotFoundException:
         print('Did got into the second registration captcha, starting captcha correction process 2 now.')
         _procedimento_captcha2(firefoxDriver=driver, firefoxOptions=options)
-        captcha2 = True
+        return True
 
 
 def _confirms_account_registration():
@@ -162,7 +177,7 @@ def _confirms_account_registration():
     try:
         global confirmed_account
         confirmed_account = pyautogui.locateOnScreen(
-            ACCOUNT_VERIFICATION_IMG, 18)
+            ACCOUNT_VERIFICATION_IMG, 18, confidence=0.9)
 
         if confirmed_account:
             print()
@@ -191,14 +206,14 @@ def reset_vpn(
 
         # opens it
         bind.tap(Key.enter)
-        sleep(5)
+        sleep(4)
 
         # turns vpn off and on again
         print('resetando o vpn')
         pyautogui.click(1347, 629, duration=.2)
-        sleep(30)
+        sleep(18)
         pyautogui.click(1347, 629, duration=.2)
-        sleep(6)
+        sleep(4)
 
         bind.press(Key.alt_l)
         bind.tap(Key.f4)
@@ -348,18 +363,13 @@ def access_betano_and_verifies_first_captcha(login: bool | None):
 
     # clica em registar
     pyautogui.click(1778, 118, duration=.5)
-    sleep(6)
+    # sleep(2)
 
     ###########################################################################
     # HERE IS WHERE THE REGISTRATION CAPTCHA POPS UP (NEED TO VERIFY) #########
-    procura_captcha1(firefoxDriver=driver, firefoxOptions=options)
+    return procura_captcha1(firefoxDriver=driver, firefoxOptions=options)
 
-    while captcha1 is True:
-        try:
-            access_betano_and_verifies_first_captcha(login=False)
-            account_registration_process(solving_problem_mode=True)
-        except:
-            pass
+    print(captcha1)
 
 
 def account_registration_process(solving_problem_mode: bool = None):
@@ -377,10 +387,8 @@ def account_registration_process(solving_problem_mode: bool = None):
         fake_data_income.gerar_endereco_e_phone_unicos()
 
     # clica em registrar com email
-    pyautogui.click(1230, 652, duration=.1)
-    pyautogui.click(1230, 652, duration=.1)
-    pyautogui.click(1230, 652, duration=.1)
-    sleep(2)
+    pyautogui.click(1236, 704, duration=.1)
+    sleep(5)
 
     bind.type(conta.email)
     bind.tap(Key.tab)
@@ -398,7 +406,7 @@ def account_registration_process(solving_problem_mode: bool = None):
         sleep(.5)
 
     bind.tap(Key.tab)
-    sleep(1)
+    sleep(2)
 
     # campo da data (mês)
     month = str(conta.date_of_birth[3] + conta.date_of_birth[4])
@@ -408,7 +416,7 @@ def account_registration_process(solving_problem_mode: bool = None):
         sleep(.5)
 
     bind.tap(Key.tab)
-    sleep(1)
+    sleep(2)
 
     # campo da data (ano)
     year = str(
@@ -428,15 +436,106 @@ def account_registration_process(solving_problem_mode: bool = None):
         conta.cpf
     )
 
-    sleep(3)
+    sleep(2)
+
+    # Try do cpf invalido
+    try:
+        cpf_already_in_use = pyautogui.locateOnScreen(
+            EXISTING_CPF,
+            5, confidence=0.9
+        )
+
+        while cpf_already_in_use:
+            # closes register div
+            pyautogui.click(1481, 157, duration=.2)
+            sleep(2)
+
+            # clica em registar
+            pyautogui.click(1778, 118, duration=.5)
+            sleep(6)
+
+            # (repeats same process but now with new data)
+            conta = iterator.next_account()
+            # selects email field again
+            pyautogui.click(1193, 380, duration=.2)
+            sleep(.5)
+
+            bind.type(
+                conta.email
+            )
+
+            bind.tap(Key.tab)
+
+            # campo da data (dia)
+            day = str(conta.date_of_birth[0] + conta.date_of_birth[1])
+
+            if day == '22':
+                # that's because Betano has the bug of 22 on day field.
+                bind.type('222')
+                sleep(.5)
+
+            else:
+                bind.type(day)
+                sleep(.5)
+
+            bind.tap(Key.tab)
+            sleep(1)
+
+            # campo da data (mês)
+            month = str(conta.date_of_birth[3] + conta.date_of_birth[4])
+
+            if month in months:
+                bind.type(months[f'{month}'])
+                sleep(.5)
+
+            bind.tap(Key.tab)
+            sleep(1)
+
+            # campo da data (ano)
+            year = str(
+                conta.date_of_birth[6] +
+                conta.date_of_birth[7] +
+                conta.date_of_birth[8] +
+                conta.date_of_birth[9]
+            )
+
+            bind.type(year)
+            sleep(1)
+
+            bind.tap(Key.tab)
+            sleep(1)
+
+            bind.type(
+                conta.cpf
+            )
+
+    except pyautogui.ImageNotFoundException:
+        print('Essa conta tem o cpf valido.')
+        pass
+
     for x in range(5):
         bind.tap(Key.tab)
         sleep(.2)
         x += 1
 
     bind.tap(Key.enter)
-    sleep(6)
+    sleep(1)
 
+    try:
+        second_registration_step_confirmation = pyautogui.locateOnScreen(
+            SECOND_REGISTRATION_STEP,
+            4, confidence=0.9
+        )
+
+        if second_registration_step_confirmation:
+            pass
+
+    except pyautogui.ImageNotFoundException:
+        print('Não consegui chegar no segundo passo da Betano.')
+        reinicia_tentativa_de_conta(driver, options)
+        return
+
+    sleep(1)
     # select address field
     pyautogui.click(1202, 449, duration=.1)
     sleep(1)
@@ -449,6 +548,7 @@ def account_registration_process(solving_problem_mode: bool = None):
     pyautogui.typewrite(betano_address, 0.1)
     print(betano_address)
     print('Email usado: ', conta.email)
+    print('Senha do email: ', conta.email_password)
     fake_data_income.save_fake_data_usage()
     sleep(1)
 
@@ -461,7 +561,7 @@ def account_registration_process(solving_problem_mode: bool = None):
     # seleciona campo de phone
     for _ in range(3):
         bind.tap(Key.tab)
-        sleep(.5)
+        sleep(.3)
         _ += 1
 
     bind.type(fake_data_income.fake_phone)
@@ -469,20 +569,46 @@ def account_registration_process(solving_problem_mode: bool = None):
 
     for x in range(4):
         bind.tap(Key.tab)
-        sleep(.5)
+        sleep(.3)
         x += 1
     sleep(1)
 
     bind.tap(Key.enter)
-    sleep(6)
-
-    for x in range(4):
-        bind.tap(Key.tab)
-        sleep(.5)
-        x += 1
     sleep(3)
 
-    # password field
+    try:
+        nome_de_usuario_necessario = pyautogui.locateOnScreen(
+            EMPTY_USER_NAME_VERIFICATION,
+            4, confidence=0.9
+        )
+
+        if nome_de_usuario_necessario:
+            # selects nickname field
+            pyautogui.click(1211, 359, duration=.2)
+            sleep(.5)
+
+            # creates a nickname based on first 4 letters of email + cpf start + random '7'
+            for indices_de_letras_do_email in range(4):
+                bind.type(
+                    conta.email[indices_de_letras_do_email])
+
+            bind.type(
+                conta.cpf[0] +
+                conta.cpf[0] +
+                conta.cpf[1] +
+                conta.cpf[1] +
+                conta.cpf[2] +
+                conta.cpf[2] +
+                '7'
+            )
+
+    except pyautogui.ImageNotFoundException:
+        pass
+
+    # betano passoword field
+    pyautogui.click(1202, 444, duration=.2)
+    sleep(1)
+
     pyautogui.typewrite(DEFAULT_PASSWORD, interval=0.1)
     sleep(1.5)
 
@@ -503,23 +629,15 @@ def account_registration_process(solving_problem_mode: bool = None):
         _ += 1
     bind.tap(Key.enter)
 
-    procura_captcha2(firefoxDriver=driver, firefoxOptions=options)
+    return procura_captcha2(firefoxDriver=driver, firefoxOptions=options)
 
-    while captcha2 is True:
-        try:
-            access_betano_and_verifies_first_captcha(login=False)
-            account_registration_process(solving_problem_mode=True)
-        except:
-            pass
-
-    # if captcha2:
-    #     # Keep trying registrating the account, now with VPN restarted, until it gets it.
-    #     while captcha2 == True:
-
+    # while captcha2 is True:
+    #     try:
+    #         print('To na linha 596')
     #         access_betano_and_verifies_first_captcha(login=False)
-    #         account_registration_process()
-    #         gmail_process()
-    #         captcha2 = None
+    #         account_registration_process(solving_problem_mode=True)
+    #     except:
+    #         pass
 
 
 def gmail_process():
@@ -544,30 +662,23 @@ def gmail_process():
 
         bind.type('gmail.com')
         bind.tap(Key.enter)
-        sleep(7)
 
-        # type login fields
-        bind.type(conta.email)
-        bind.tap(Key.enter)
-        sleep(1)
-
-    # Verifies gmail password screen
+        # Verifies gmail's username screen
         try:
-            gmail_password_step = pyautogui.locateOnScreen(
-                GMAIL_PASSWORD_SCREEN_VERIFICATION,
-                8
+            gmail_username_step = pyautogui.locateOnScreen(
+                GMAIL_USERNAME_SCREEN_VERIFICATION,
+                9, confidence=0.9
             )
 
-            if gmail_password_step:
-                sleep(1)
-                gmail_password_step = None
-                pass
+            if gmail_username_step:
+                sleep(1.5)
+                # type login fields
+                bind.type(conta.email)
+                sleep(.5)
+                bind.tap(Key.enter)
 
         except pyautogui.ImageNotFoundException:
-            print('Could not login to gmail. Stopping execution.')
-            print('STILL NEED TO CONFIRM THE CODE ON BETANO.')
-            print()
-
+            print('Could not open gmail. Trying again now.')
             bind.press(Key.alt_l)
             bind.tap(Key.f4)
             bind.release(Key.alt_l)
@@ -575,45 +686,102 @@ def gmail_process():
 
             open_gmail()
 
+        # Verifies gmail password screen
+        try:
+            global gmail_password_step
+            gmail_password_step = pyautogui.locateOnScreen(
+                GMAIL_PASSWORD_SCREEN_VERIFICATION,
+                7, confidence=0.9
+            )
+
+            if gmail_password_step:
+                sleep(1.5)
+                pass
+
+        # if this except comes, we need to pass to the next account
+        except pyautogui.ImageNotFoundException:
+            print('This email apparently does not exit, passing to the  account now.')
+            gmail_password_step = False
+            print()
+            print(f'The account with the email "{conta.email}" does NOT work.')
+
+            bind.press(Key.alt_l)
+            bind.tap(Key.f4)
+            bind.release(Key.alt_l)
+            sleep(2)
+
+    # open_gmail leaves us on the gmail password screen
     open_gmail()
 
     bind.type(conta.email_password)
     bind.tap(Key.enter)
-    sleep(8)
 
-    # google not now button 1
-    pyautogui.click(1268, 733, duration=.1, clicks=2, interval=.5)
-    sleep(5)
+    # Google not now 1 verification sreen (situational)
+    try:
+        not_now1_situational = pyautogui.locateOnScreen(
+            GMAIL_NOT_NOW_SCREEN_VERIFICATION1,
+            8, confidence=0.9
+        )
 
-    # google not now button 2
-    pyautogui.click(812, 839, duration=.1, clicks=2, interval=.5)
-    sleep(10)
+        if not_now1_situational:
+            # google not now button 1
+            pyautogui.click(1268, 733, duration=.1)
 
-    # email search field
-    pyautogui.click(411, 114, duration=.2)
-    sleep(3)
+    except pyautogui.ImageNotFoundException:
+        pass
 
-    bind.type('Bem-vindo à Betano!')
-    bind.tap(Key.enter)
-    sleep(4)
+    # Google not now 2 verification sreen
+    try:
+        not_now2 = pyautogui.locateOnScreen(
+            GMAIL_NOT_NOW_SCREEN_VERIFICATION2,
+            8, confidence=0.9
+        )
 
-    # selects account's first email
-    pyautogui.click(997, 278, duration=.2)
-    sleep(4)
+        if not_now2:
+            # google not now button 2
+            sleep(1)
+            pyautogui.click(812, 839, duration=.1)
 
-    # selects verification code
-    pyautogui.click(1158, 681, duration=.2, clicks=2)
-    sleep(1)
-    bind.press(Key.ctrl_l)
-    bind.type('c')
-    bind.release(Key.ctrl_l)
-    sleep(1)
+    except pyautogui.ImageNotFoundException:
+        pass
 
-    # closes gmail window
-    pyautogui.click(1894, 14, duration=.2)
-    sleep(1)
-    bind.tap(Key.enter)
-    sleep(3)
+    # Google logged on screen verification
+    try:
+        gmail_logged_on_screen = pyautogui.locateOnScreen(
+            GMAIL_LOGGED_ON_SCREEN_VERIFICATION,
+            16, confidence=0.9
+        )
+
+        if gmail_logged_on_screen:
+            # email search field
+            pyautogui.click(411, 114, duration=.2)
+            sleep(2)
+
+            bind.type('Bem-vindo à Betano!')
+            bind.tap(Key.enter)
+            sleep(4)
+
+            # selects account's first email
+            pyautogui.click(997, 278, duration=.2)
+            sleep(4)
+
+            # selects verification code
+            pyautogui.click(1158, 681, duration=.2, clicks=2)
+            sleep(1)
+            bind.press(Key.ctrl_l)
+            bind.type('c')
+            bind.release(Key.ctrl_l)
+            sleep(1)
+
+            # closes gmail window
+            pyautogui.click(1894, 14, duration=.2)
+            sleep(.5)
+            bind.tap(Key.enter)
+            sleep(2)
+
+    except pyautogui.ImageNotFoundException:
+        print('Rapaz, deu pra logar no gmail n, aqui cabo.')
+        exit()
 
     # betano verification code input field
     pyautogui.click(1118, 501, duration=.2)
@@ -669,17 +837,40 @@ account_num = 0
 print()
 print(f'{len(iterator.rows)} contas da DB a serem registradas.')
 first_iteration = True
+
+
 # DB Accounts loop:
 for process in iterator.rows:
     print()
     account_num += 1
     print(f'Account number {account_num}.')
+    captcha1 = None
+    captcha2 = None
 
     # Tries to access and use betano successfully
     try:
-        access_betano_and_verifies_first_captcha(login=False)
-        account_registration_process()  # Verifies if email was sent to gmail.
-        gmail_process()  # (Closes driver after process)
+        captcha1 = access_betano_and_verifies_first_captcha(login=False)
+        print(captcha1, captcha2)
+        if captcha1 != True:
+            captcha2 = account_registration_process()
+            if captcha2 != True:
+                gmail_process()  # (Closes driver after process)
+
+        # (Equanto houver algum captcha)
+        while captcha1 == True or captcha2 == True:
+            print('To na linha 862')
+            access_betano_and_verifies_first_captcha(login=False)
+
+            if captcha1 != True:
+                account_registration_process(solving_problem_mode=True)
+
+                if captcha2 != True:
+                    gmail_process()  # (Closes driver after process)
+                    print(captcha1, captcha2)
+
+        if gmail_password_step == False:
+            driver.quit()
+            continue
 
     # In the case de IP from VPN comes offline, the script tries again with other IP
     except WebDriverException:
@@ -688,32 +879,10 @@ for process in iterator.rows:
         account_registration_process()  # Verifies if email was sent to gmail.
         gmail_process()  # (Closes driver after process)
 
-    # In the case of the first captcha pops up
-    while captcha1 == True:
-        # while captcha1 is True, access_betano_and_verifies_first_captcha will try to fix it,
-        # so I don't need to call reset_vpn.
-        access_betano_and_verifies_first_captcha(login=False)
-        # Verifies if email was sent to gmail. (captcha2)
-        if first_iteration == True:
-            account_registration_process()
-        else:
-            account_registration_process(solving_problem_mode=True)
-        gmail_process()  # (Closes driver after process)
-
-    # In the case of the second captcha pops up
-    while captcha2 == True:
-        access_betano_and_verifies_first_captcha(login=False)
-        # Verifies if email was sent to gmail. (captcha2)
-        # if first_iteration == True, we call next account in case of captcha
-        if first_iteration == True:
-            account_registration_process()
-        else:
-            account_registration_process(solving_problem_mode=True)
-        gmail_process()  # (Closes driver after process)
-
     save_info_to_db()
     reset_vpn(restart=True)
     first_iteration = False
+    print('Tenorio Vagabundo.')
 
 
 iterator.cursor.close()
