@@ -1,7 +1,7 @@
 avenidas = [
     ("Avenida Boa Sorte, ", "RN"),
     ("Avenida Maranguape, ", "RN"),
-    ("Rua José Luiz da Silva, ", "RN"),
+    ("Avenida Industrial, ", "RN"),
 
 
     # ("Rua Barão de Aratanha, ", "CE"),

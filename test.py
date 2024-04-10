@@ -10,80 +10,49 @@ ROOT_DIR = Path(__file__).parent
 CAPTCHA_IMG = f'{ROOT_DIR}\\images\\betano_vpn_captcha_indicator.png'
 
 
-def procura_captcha(firefoxDriver: webdriver.Firefox, firefoxOptions: webdriver.FirefoxOptions):
-
-    def _procedimento_captcha(firefoxDriver: webdriver.Firefox, firefoxOptions: webdriver.FirefoxOptions):
-        firefoxDriver.quit()
-        # Verifica se o driver está usando abas anônimas
-        if '--private' in firefoxOptions.arguments:
-            print("O driver estava usando abas anônimas. Mudando para abas normais.")
-            # Remova a opção '--private' para usar abas normais
-            firefoxOptions.arguments.remove('--private')
-            sleep(1)
-
-            # firefoxDriver = webdriver.Firefox(
-            #     service=service, options=firefoxOptions)
-            # firefoxDriver.maximize_window()
-        else:
-            print("O driver não estava usando abas anônimas. Mudando para abas anônimas.")
-            # Adicione a opção '--private' para usar abas anônimas
-            firefoxOptions.arguments.append('--private')
-            sleep(1)
-
-        # firefoxDriver = webdriver.Firefox(
-        #     service=service, options=firefoxOptions)
-        # firefoxDriver.maximize_window()
-
-        return firefoxOptions
-
+def verifica_se_email_existe():
     try:
-        captcha = pyautogui.locateOnScreen(CAPTCHA_IMG, 10)
+        global email_already_exists
+        email_already_exists = pyautogui.locateOnScreen(
+            EMAIL_ALREADY_EXISTS,
+            4, confidence=0.9
+        )
 
-        if captcha:
-            print('MEU DEUS O GUSTAVO LIMA SOCORRO')
-            sleep(1)
-            _procedimento_captcha(firefoxDriver=driver, firefoxOptions=options)
+        while email_already_exists:
+            tentativas_de_email = 0
+            print(
+                f'"{conta.email}" está oficialmente repleto de câncer, é realmente uma pena, tão jovem...')
+            print(
+                f'Passando para o proximo, ainda restam {account_num} contas na DB.')
+            try:
+                # Se a imagem foi encontrada, passa para a próxima conta
+                conta = iterator.next_account()
 
+                # Apaga o e-mail em uso e tenta com o próximo
+                pyautogui.click(1193, 380, duration=.2, clicks=3, interval=.2)
+                bind.type(conta.email)
+                sleep(2)
+
+                # Tenta localizar a imagem EMAIL_ALREADY_EXISTS na tela novamente
+                pyautogui.locateOnScreen(
+                    EMAIL_ALREADY_EXISTS, 4, confidence=0.9)
+
+                print()
+                print('Email ja existe, tentando com o proximo.')
+                print(account_num, 'contas restantes.')
+                print()
+
+                tentativas_de_email += 1
+
+                if tentativas_de_email == 3:
+                    print('Muitas tentativas de email. Verifique a DB.')
+                    exit()
+
+            except pyautogui.ImageNotFoundException:
+                # Se a imagem não foi encontrada, significa que o e-mail não existe na Betano.
+                email_already_exists = False
+
+    # Se a imagem não foi encontrada, significa que o e-mail não existe na Betano.
     except pyautogui.ImageNotFoundException:
-        print('N consegui achar a imagem, continuaria o processo daqui.')
-        sleep(3)
-        firefoxDriver.quit()
-
-
-def instancia_driver():
-    global driver
-    driver = webdriver.Firefox(service=service, options=options)
-    driver.maximize_window()
-
-
-options = webdriver.FirefoxOptions()
-options.add_argument('--private')
-options.add_argument("--disable-blink-features=AutomationControlled")
-options.set_preference("dom.webdriver.enabled", False)
-options.set_preference('useAutomationExtension', False)
-options.set_preference("dom.webnotifications.enabled", False)
-options.set_preference("geo.enabled", False)
-options.set_preference("geo.provider.use_corelocation", False)
-options.set_preference("geo.prompt.testing", False)
-options.set_preference("geo.prompt.testing.allow", False)
-options.set_preference("dom.push.enabled", False)
-options.set_preference("media.navigator.enabled", False)
-options.set_preference("media.navigator.permission.disabled", True)
-options.set_preference("media.navigator.streams.fake", True)
-options.set_preference("media.peerconnection.enabled", False)
-options.set_preference("media.peerconnection.identity.timeout", 1)
-options.set_preference("media.peerconnection.turn.disable", True)
-options.set_preference("media.peerconnection.use_document_iceservers", False)
-options.set_preference("media.peerconnection.video.enabled", False)
-options.profile = profile_path
-
-service = FirefoxService()
-
-
-x = 1
-for _ in range(3):
-    instancia_driver()
-    print('iter: ', x)
-    print('Firefox Options Arguments: ', options.arguments)
-    procura_captcha(firefoxDriver=driver, firefoxOptions=options)
-    x += 1
+        email_already_exists = False
+        pass

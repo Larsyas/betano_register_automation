@@ -1,4 +1,6 @@
 from code import interact
+import email
+from pickletools import pytuple
 import pyautogui
 from months import months
 from utils.data_usage_test import AccountIterator, Conta
@@ -19,6 +21,7 @@ ROOT_DIR = Path(__file__).parent  # (Sou_um_ser_humano_confia)
 CAPTCHA_IMG1 = f'{ROOT_DIR}\\images\\betano_vpn_captcha_indicator.png'
 CAPTCHA_IMG2 = f'{ROOT_DIR}\\images\\betano_vpn_captcha_indicator2.png'
 EMAIL_CODE_VERIFICATION = f'{ROOT_DIR}\\images\\verification_code_error.png'
+EMAIL_ALREADY_EXISTS = f'{ROOT_DIR}\\images\\email_ja_existe.png'
 ACCOUNT_VERIFICATION_IMG = f'{ROOT_DIR}\\images\\account_successfully_created_verification.png'
 EXISTING_CPF = f'{ROOT_DIR}\\images\\cpf_existente.png'
 EMPTY_USER_NAME_VERIFICATION = f'{ROOT_DIR}\\images\\usuario_em_branco.png'
@@ -73,27 +76,43 @@ def reinicia_tentativa_de_conta(firefoxDriver: webdriver.Firefox, firefoxOptions
 
 
 def verifies_email_code_error():
-    i = 0
+    tentativas_codigo_gmail = 0
     try:
         verification_code_error = pyautogui.locateOnScreen(
             EMAIL_CODE_VERIFICATION,
             4, confidence=0.9
         )
 
-    except pyautogui.ImageNotFoundException:
-        solved_bug = True
-        # (account created)
+        while verification_code_error:
+            try:
+                sleep(1)
+                # refreshes page
+                bind.tap(Key.f5)
+                sleep(5)
 
-    while solved_bug != True:
-        if verification_code_error:
-            # refreshes page
-            bind.tap(Key.f5)
-            sleep(5)
-            i += 1
-            if i == 3:
+                pyautogui.locateAllOnScreen(
+                    EMAIL_CODE_VERIFICATION,
+                    4, confidence=0.9
+                )
+
+                print()
                 print(
-                    f'{i} Failed attemps to put the verification code, closing app.')
-                break
+                    'Got into the verification bug, trying to fix it by refreshing page.')
+
+                tentativas_codigo_gmail += 1
+
+                if tentativas_codigo_gmail == 3:
+                    print(
+                        f'{tentativas_codigo_gmail} Failed attemps to put the verification code, closing app.')
+                    break
+
+            except pyautogui.ImageNotFoundException:
+                # Se o bug nao foi encontrado, significa que a conta foi confirmada.
+                verification_code_error = False
+
+    except pyautogui.ImageNotFoundException:
+        verification_code_error = False
+        # (account created)
 
 
 def procura_captcha1(firefoxDriver: webdriver.Firefox, firefoxOptions: webdriver.FirefoxOptions):
@@ -118,7 +137,7 @@ def procura_captcha1(firefoxDriver: webdriver.Firefox, firefoxOptions: webdriver
 
         return firefoxDriver, firefoxOptions
 
-# after here, the script goes to the begging of the trying loop
+# after here, the script goes to the beginning of the trying loop
 
     try:
         captcha1 = pyautogui.locateOnScreen(CAPTCHA_IMG1, 4, confidence=0.9)
@@ -129,10 +148,12 @@ def procura_captcha1(firefoxDriver: webdriver.Firefox, firefoxOptions: webdriver
             _procedimento_captcha1(firefoxDriver=driver,
                                    firefoxOptions=options)
 
+            captcha1 = True
             return True
 
     except pyautogui.ImageNotFoundException:
         print('Did not got into the first registration captcha, continuing now.')
+        captcha1 = False
         return False
 
 
@@ -164,11 +185,13 @@ def procura_captcha2(firefoxDriver: webdriver.Firefox, firefoxOptions: webdriver
         if captcha2:
             print('Did not got to the second captcha, continuing, gg.')
             sleep(1)
+            captcha2 = False
             return False
 
     except pyautogui.ImageNotFoundException:
         print('Did got into the second registration captcha, starting captcha correction process 2 now.')
         _procedimento_captcha2(firefoxDriver=driver, firefoxOptions=options)
+        captcha2 = True
         return True
 
 
@@ -267,53 +290,6 @@ def save_info_to_db():
     conta.date_of_creation = datetime.datetime.now()
 
 
-def connect_to_phone():
-    # This function presumes you're in the pc desktop.
-
-    def restart_ip():
-
-        # clicks airplane phone mode (turn on)
-        pyautogui.click(851, 583, duration=.5)
-        sleep(15)
-
-        # clicks airplane phone mode (turn off)
-        pyautogui.click(851, 583, duration=.5)
-        sleep(7)
-
-        # turns phone wifi router back on
-        pyautogui.click(1044, 580, duration=.5)
-        sleep(5)
-
-        # minimizes everything
-        bind.press(Key.cmd)
-        bind.type('d')
-        bind.release(Key.cmd)
-
-        # # clicks internet options
-        # pyautogui.click(856, 294, duration=.5)
-        # sleep(2)
-
-        # # turns 4g on
-        # pyautogui.click(1110, 631, duration=.5)
-        # sleep(3)
-
-        # # closes internet options
-        # pyautogui.click(1096, 937, duration=.5)
-        # sleep(2)
-
-    # opens scrcpy
-    bind.press(Key.cmd)
-    bind.type('6')
-    bind.release(Key.cmd)
-    sleep(10)
-
-    restart_ip()
-
-
-def _switchTab(i):
-    driver.switch_to.window(driver.window_handles[i])
-
-
 def access_betano_and_verifies_first_captcha(login: bool | None):
     if login is True:
         global driver
@@ -369,8 +345,6 @@ def access_betano_and_verifies_first_captcha(login: bool | None):
     # HERE IS WHERE THE REGISTRATION CAPTCHA POPS UP (NEED TO VERIFY) #########
     return procura_captcha1(firefoxDriver=driver, firefoxOptions=options)
 
-    print(captcha1)
-
 
 def account_registration_process(solving_problem_mode: bool = None):
 
@@ -383,14 +357,25 @@ def account_registration_process(solving_problem_mode: bool = None):
         conta = iterator.next_account()
 
         # Instanciando e gerando fake data class
+        global fake_data_income
         fake_data_income = FakeAddress()
         fake_data_income.gerar_endereco_e_phone_unicos()
 
-    # clica em registrar com email
-    pyautogui.click(1236, 704, duration=.1)
+    # navega ate registrar com email via click + tab
+    pyautogui.click(1216, 866, duration=.1)
+    sleep(1)
+    bind.tap(Key.tab)
+    sleep(.5)
+    bind.tap(Key.enter)
+
     sleep(5)
 
     bind.type(conta.email)
+    sleep(1)
+
+    # Try do email ja existente (passa pra proxima conta)
+    verifica_se_email_existe(conta)
+
     bind.tap(Key.tab)
 
     # campo da data (dia)
@@ -436,7 +421,7 @@ def account_registration_process(solving_problem_mode: bool = None):
         conta.cpf
     )
 
-    sleep(2)
+    sleep(1)
 
     # Try do cpf invalido
     try:
@@ -446,71 +431,90 @@ def account_registration_process(solving_problem_mode: bool = None):
         )
 
         while cpf_already_in_use:
-            # closes register div
-            pyautogui.click(1481, 157, duration=.2)
-            sleep(2)
+            print('This CPF is already in use. Passing to next account.')
+            try:
+                # closes register div
+                pyautogui.click(1481, 157, duration=.2)
+                sleep(2)
 
-            # clica em registar
-            pyautogui.click(1778, 118, duration=.5)
-            sleep(6)
+                # clica em registar
+                pyautogui.click(1778, 118, duration=.5)
+                sleep(3)
 
-            # (repeats same process but now with new data)
-            conta = iterator.next_account()
-            # selects email field again
-            pyautogui.click(1193, 380, duration=.2)
-            sleep(.5)
+                # clica em registrar com email
+                pyautogui.click(1225, 707, duration=.2)
+                sleep(3)
 
-            bind.type(
-                conta.email
-            )
-
-            bind.tap(Key.tab)
-
-            # campo da data (dia)
-            day = str(conta.date_of_birth[0] + conta.date_of_birth[1])
-
-            if day == '22':
-                # that's because Betano has the bug of 22 on day field.
-                bind.type('222')
+                # (repeats same process but now with new data)
+                conta = iterator.next_account()
+                # selects email field again
+                pyautogui.click(1193, 380, duration=.2)
                 sleep(.5)
 
-            else:
-                bind.type(day)
-                sleep(.5)
+                bind.type(
+                    conta.email
+                )
 
-            bind.tap(Key.tab)
-            sleep(1)
+                verifica_se_email_existe(conta)
 
-            # campo da data (mês)
-            month = str(conta.date_of_birth[3] + conta.date_of_birth[4])
+                if email_already_exists == False:
 
-            if month in months:
-                bind.type(months[f'{month}'])
-                sleep(.5)
+                    bind.tap(Key.tab)
 
-            bind.tap(Key.tab)
-            sleep(1)
+                    # campo da data (dia)
+                    day = str(conta.date_of_birth[0] + conta.date_of_birth[1])
 
-            # campo da data (ano)
-            year = str(
-                conta.date_of_birth[6] +
-                conta.date_of_birth[7] +
-                conta.date_of_birth[8] +
-                conta.date_of_birth[9]
-            )
+                    if day == '22':
+                        # that's because Betano has the bug of 22 on day field.
+                        bind.type('222')
+                        sleep(.5)
 
-            bind.type(year)
-            sleep(1)
+                    else:
+                        bind.type(day)
+                        sleep(.5)
 
-            bind.tap(Key.tab)
-            sleep(1)
+                    bind.tap(Key.tab)
+                    sleep(1)
 
-            bind.type(
-                conta.cpf
-            )
+                    # campo da data (mês)
+                    month = str(
+                        conta.date_of_birth[3] + conta.date_of_birth[4])
+
+                    if month in months:
+                        bind.type(months[f'{month}'])
+                        sleep(.5)
+
+                    bind.tap(Key.tab)
+                    sleep(1)
+
+                    # campo da data (ano)
+                    year = str(
+                        conta.date_of_birth[6] +
+                        conta.date_of_birth[7] +
+                        conta.date_of_birth[8] +
+                        conta.date_of_birth[9]
+                    )
+
+                    bind.type(year)
+                    sleep(1)
+
+                    bind.tap(Key.tab)
+                    sleep(1)
+
+                    bind.type(
+                        conta.cpf
+                    )
+
+                    sleep(2)
+
+                    # Tenta localizar a imagem EMAIL_ALREADY_EXISTS na tela
+                    pyautogui.locateOnScreen(EXISTING_CPF, 4, confidence=0.9)
+
+            except pyautogui.ImageNotFoundException:
+                cpf_already_in_use = False
 
     except pyautogui.ImageNotFoundException:
-        print('Essa conta tem o cpf valido.')
+        # print('Essa conta tem o cpf valido.')
         pass
 
     for x in range(5):
@@ -535,7 +539,7 @@ def account_registration_process(solving_problem_mode: bool = None):
         reinicia_tentativa_de_conta(driver, options)
         return
 
-    sleep(1)
+    sleep(2.5)
     # select address field
     pyautogui.click(1202, 449, duration=.1)
     sleep(1)
@@ -576,6 +580,7 @@ def account_registration_process(solving_problem_mode: bool = None):
     bind.tap(Key.enter)
     sleep(3)
 
+    # Try no nickname necessario
     try:
         nome_de_usuario_necessario = pyautogui.locateOnScreen(
             EMPTY_USER_NAME_VERIFICATION,
@@ -749,7 +754,7 @@ def gmail_process():
     try:
         gmail_logged_on_screen = pyautogui.locateOnScreen(
             GMAIL_LOGGED_ON_SCREEN_VERIFICATION,
-            16, confidence=0.9
+            25, confidence=0.9
         )
 
         if gmail_logged_on_screen:
@@ -830,6 +835,54 @@ def gmail_process():
     sleep(2)
 
 
+def verifica_se_email_existe(conta):
+    try:
+        global email_already_exists
+        email_already_exists = pyautogui.locateOnScreen(
+            EMAIL_ALREADY_EXISTS,
+            4, confidence=0.9
+        )
+
+        while email_already_exists:
+            tentativas_de_email = 0
+            print(
+                f'"{conta.email}" está oficialmente repleto de câncer, é realmente uma pena, tão jovem...')
+            print(
+                f'Passando para o proximo, ainda restam {account_num} contas na DB.')
+            try:
+                # Se a imagem foi encontrada, passa para a próxima conta
+                conta = iterator.next_account()
+
+                # Apaga o e-mail em uso e tenta com o próximo
+                pyautogui.click(1193, 380, duration=.2, clicks=3, interval=.2)
+                bind.type(conta.email)
+                sleep(2)
+
+                # Tenta localizar a imagem EMAIL_ALREADY_EXISTS na tela novamente
+                pyautogui.locateOnScreen(
+                    EMAIL_ALREADY_EXISTS, 4, confidence=0.9)
+
+                print()
+                print('Email ja existe, tentando com o proximo.')
+                print(account_num, 'contas restantes.')
+                print()
+
+                tentativas_de_email += 1
+
+                if tentativas_de_email == 3:
+                    print('Muitas tentativas de email. Verifique a DB.')
+                    exit()
+
+            except pyautogui.ImageNotFoundException:
+                # Se a imagem não foi encontrada, significa que o e-mail não existe na Betano.
+                email_already_exists = False
+
+    # Se a imagem não foi encontrada, significa que o e-mail não existe na Betano.
+    except pyautogui.ImageNotFoundException:
+        email_already_exists = False
+        pass
+
+
 ########################################
 
 
@@ -850,7 +903,6 @@ for process in iterator.rows:
     # Tries to access and use betano successfully
     try:
         captcha1 = access_betano_and_verifies_first_captcha(login=False)
-        print(captcha1, captcha2)
         if captcha1 != True:
             captcha2 = account_registration_process()
             if captcha2 != True:
@@ -858,15 +910,19 @@ for process in iterator.rows:
 
         # (Equanto houver algum captcha)
         while captcha1 == True or captcha2 == True:
-            print('To na linha 862')
+            print('ovo tentar dnv')
             access_betano_and_verifies_first_captcha(login=False)
+            captcha1 = False
 
             if captcha1 != True:
-                account_registration_process(solving_problem_mode=True)
+                print('if captcha1 L918')
+                # if we're in first iteration, we need to call next account
+                if first_iteration == True:
+                    account_registration_process(solving_problem_mode=True)
 
-                if captcha2 != True:
-                    gmail_process()  # (Closes driver after process)
-                    print(captcha1, captcha2)
+                    if captcha2 == True:
+                        print('if captcha2 L924')
+                        gmail_process()  # (Closes driver after process)
 
         if gmail_password_step == False:
             driver.quit()
@@ -880,10 +936,13 @@ for process in iterator.rows:
         gmail_process()  # (Closes driver after process)
 
     save_info_to_db()
+    print('reset de vpn da linha 932')
     reset_vpn(restart=True)
     first_iteration = False
-    print('Tenorio Vagabundo.')
+    print('Tenorio Vagabundo!!')
 
 
 iterator.cursor.close()
 iterator.connection.close()
+
+print('Acabei, então se você já não tiver bebendo, vai beber enquanto espera o pixKKK')
