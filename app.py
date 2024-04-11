@@ -71,7 +71,7 @@ bind = Controller()
 def reinicia_tentativa_de_conta(firefoxDriver: webdriver.Firefox, firefoxOptions: webdriver.FirefoxOptions):
     firefoxDriver.quit()
     reset_vpn(restart=True)
-    access_betano_and_verifies_first_captcha()
+    access_betano_and_verifies_first_captcha(login=False)
     account_registration_process(solving_problem_mode=True)
 
 
@@ -362,13 +362,15 @@ def account_registration_process(solving_problem_mode: bool = None):
         fake_data_income.gerar_endereco_e_phone_unicos()
 
     # navega ate registrar com email via click + tab
-    pyautogui.click(1216, 866, duration=.1)
-    sleep(1)
-    bind.tap(Key.tab)
-    sleep(.5)
-    bind.tap(Key.enter)
-
-    sleep(5)
+        # clica em registrar com email
+        pyautogui.click(1216, 866, duration=.1)
+        sleep(2)
+        pyautogui.click(1216, 866, duration=.1)
+        sleep(1)
+        bind.tap(Key.tab)
+        sleep(.5)
+        bind.tap(Key.enter)
+        sleep(5)
 
     bind.type(conta.email)
     sleep(1)
@@ -433,17 +435,20 @@ def account_registration_process(solving_problem_mode: bool = None):
         while cpf_already_in_use:
             print('This CPF is already in use. Passing to next account.')
             try:
-                # closes register div
-                pyautogui.click(1481, 157, duration=.2)
-                sleep(2)
-
-                # clica em registar
-                pyautogui.click(1778, 118, duration=.5)
+                driver.quit()
                 sleep(3)
+
+                access_betano_and_verifies_first_captcha(login=False)
 
                 # clica em registrar com email
-                pyautogui.click(1225, 707, duration=.2)
-                sleep(3)
+                pyautogui.click(1216, 866, duration=.1)
+                sleep(2)
+                pyautogui.click(1216, 866, duration=.1)
+                sleep(1)
+                bind.tap(Key.tab)
+                sleep(.5)
+                bind.tap(Key.enter)
+                sleep(5)
 
                 # (repeats same process but now with new data)
                 conta = iterator.next_account()
@@ -632,6 +637,7 @@ def account_registration_process(solving_problem_mode: bool = None):
         bind.tap(Key.tab)
         sleep(.3)
         _ += 1
+
     bind.tap(Key.enter)
 
     return procura_captcha2(firefoxDriver=driver, firefoxOptions=options)
@@ -793,14 +799,11 @@ def gmail_process():
     bind.press(Key.ctrl_l)
     bind.type('v')
     bind.release(Key.ctrl_l)
-    sleep(3)
+    sleep(2)
 
-    for _ in range(4):
-        bind.tap(Key.tab)
-        sleep(.2)
-        _ += 1
-
-    bind.tap(Key.enter)
+    pyautogui.click(
+        1329, 873, duration=.2
+    )
     sleep(1)
 
     # Sometimes, pasting the email code on Betano fails.
@@ -936,7 +939,7 @@ for process in iterator.rows:
         gmail_process()  # (Closes driver after process)
 
     save_info_to_db()
-    print('reset de vpn da linha 932')
+    print('reset de vpn da linha 947')
     reset_vpn(restart=True)
     first_iteration = False
     print('Tenorio Vagabundo!!')

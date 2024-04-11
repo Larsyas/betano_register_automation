@@ -40,7 +40,7 @@ iterator.connect_to_db()
 service = FirefoxService(executable_path=GeckoDriverManager().install())
 
 options = webdriver.FirefoxOptions()
-# options.add_argument('--private')
+options.add_argument('--private')
 options.add_argument("--disable-blink-features=AutomationControlled")
 options.set_preference("dom.webdriver.enabled", False)
 options.set_preference('useAutomationExtension', False)
@@ -71,7 +71,7 @@ bind = Controller()
 def reinicia_tentativa_de_conta(firefoxDriver: webdriver.Firefox, firefoxOptions: webdriver.FirefoxOptions):
     firefoxDriver.quit()
     reset_vpn(restart=True)
-    access_betano_and_verifies_first_captcha()
+    access_betano_and_verifies_first_captcha(login=False)
     account_registration_process(solving_problem_mode=True)
 
 
@@ -362,13 +362,15 @@ def account_registration_process(solving_problem_mode: bool = None):
         fake_data_income.gerar_endereco_e_phone_unicos()
 
     # navega ate registrar com email via click + tab
-    pyautogui.click(1216, 866, duration=.1)
-    sleep(1)
-    bind.tap(Key.tab)
-    sleep(.5)
-    bind.tap(Key.enter)
-
-    sleep(5)
+        # clica em registrar com email
+        pyautogui.click(1216, 866, duration=.1)
+        sleep(2)
+        pyautogui.click(1216, 866, duration=.1)
+        sleep(1)
+        bind.tap(Key.tab)
+        sleep(.5)
+        bind.tap(Key.enter)
+        sleep(5)
 
     bind.type(conta.email)
     sleep(1)
@@ -442,8 +444,14 @@ def account_registration_process(solving_problem_mode: bool = None):
                 sleep(3)
 
                 # clica em registrar com email
-                pyautogui.click(1225, 707, duration=.2)
-                sleep(3)
+                pyautogui.click(1216, 866, duration=.1)
+                sleep(2)
+                pyautogui.click(1216, 866, duration=.1)
+                sleep(1)
+                bind.tap(Key.tab)
+                sleep(.5)
+                bind.tap(Key.enter)
+                sleep(5)
 
                 # (repeats same process but now with new data)
                 conta = iterator.next_account()
@@ -632,6 +640,8 @@ def account_registration_process(solving_problem_mode: bool = None):
         bind.tap(Key.tab)
         sleep(.3)
         _ += 1
+
+    sleep(3000)
     bind.tap(Key.enter)
 
     return procura_captcha2(firefoxDriver=driver, firefoxOptions=options)
@@ -936,7 +946,7 @@ for process in iterator.rows:
         gmail_process()  # (Closes driver after process)
 
     save_info_to_db()
-    print('reset de vpn da linha 932')
+    print('reset de vpn da linha 947')
     reset_vpn(restart=True)
     first_iteration = False
     print('Tenorio Vagabundo!!')
